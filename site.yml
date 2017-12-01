@@ -1,0 +1,95 @@
+---
+- hosts: default
+  vars:
+    root_path: /vagrant
+    deploy_to: "{{root_path}}/pivorak-web-app"
+    tmp_path: "{{root_path}}/tmp"
+  tasks:
+    - ping:
+    - file:
+        path: "{{tmp_path}}"
+        state: directory
+    - name: update cache every 3600 mins
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      become: yes
+    - name: ensure required packages presence
+      apt:
+        name: "{{item}}"
+        state: present
+      with_items:
+        - aptitude
+        - git
+        - vim
+        - htop
+        # app
+        - python-pip
+        - libpq-dev
+        - nodejs
+      become: yes
+    - name: ensure postgresq 9.5 presence
+      apt:
+        name: postgresql-9.5
+        state: present
+      become: yes
+    - name: ensure redis presence
+      apt:
+        name: redis-server
+        state: present
+      become: yes
+    - git:
+        repo: https://github.com/pivorakmeetup/pivorak-web-app.git
+        dest: "{{deploy_to}}"
+        update: no
+    - name: rvm | ensure gpg key presence
+      shell: | 
+        gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB && \
+        touch {{tmp_path}}/rvm-gpgkey
+      args:
+        creates:
+          "{{tmp_path}}/rvm-gpgkey"
+    - name: rvm | ensure rvm presence
+      shell: |
+        curl -sSL https://get.rvm.io | bash -s stable --ruby=ruby-2.3.1 --gems=bundler && \
+          touch {{tmp_path}}/rvm-present
+      args:
+        creates: "{{tmp_path}}/rvm-present"
+        warn: no
+    - name: app | ensure required gems presence
+      shell: |
+        . /home/vagrant/.rvm/scripts/rvm && cd {{deploy_to}} && \
+        rvm use ruby-2.3.1 do bundle && touch {{tmp_path}}/app-bundle
+      args:
+        executable: /bin/bash
+        chdir: "{{root_path}}"
+        creates: "{{tmp_path}}/app-bundle"
+    - name: app | ensure psycopg2 presence
+      pip:
+        name: psycopg2
+      changed_when: no # bug!
+      become_user: postgres
+      become: yes
+    - name: app | create user
+      postgresql_user:
+        name: pivorak
+        password: nopassword
+        role_attr_flags: CREATEDB,SUPERUSER
+      become_user: postgres
+      become: yes
+    - name: app | database.yml
+      template:
+        src: database.yml.j2
+        dest: "{{deploy_to}}/config/database.yml"
+    - name: app | environments/development.rb
+      template:
+        src: development.rb.j2
+        dest: "{{deploy_to}}/config/environments/development.rb"
+    - name: app | db:setup
+      shell: |
+        . /home/vagrant/.rvm/scripts/rvm && cd {{deploy_to}} && \
+        rvm use ruby-2.3.1 do bundle exec rake db:setup && touch {{tmp_path}}/app-db-setup
+      args:
+        executable: /bin/bash
+        creates: "{{tmp_path}}/app-db-setup"
+        # chdir: /home/vagrant/

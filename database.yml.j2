@@ -1,0 +1,21 @@
+default: &default
+  adapter: postgresql
+  host: localhost
+  username: pivorak
+  password: nopassword
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  database: pivorak_development
+
+test:
+  <<: *default
+  database: pivorak_test
+
+production:
+  <<: *default
+  database: pivorak_production
+  username: pivorak
+  password: <%= ENV['pivorak_DATABASE_PASSWORD'] %>
