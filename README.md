@@ -1,6 +1,14 @@
 ## Pivarak-osx-dev
 
+[![Pivarak-osx-dev](https://img.youtube.com/vi/X9EFMeGTMo4/0.jpg)](https://www.youtube.com/watch?v=X9EFMeGTMo4)
+
+[Look it in action...](https://www.youtube.com/watch?v=X9EFMeGTMo4)
+
 # Requirements
+
+* Homebrew + Cask
+* Virtualbox
+* Vagrant
 
 # Homebrew
 
