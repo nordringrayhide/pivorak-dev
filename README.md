@@ -18,3 +18,11 @@ brew cask install vagrant virtualbox
 
 rails s -b 0.0.0.0
 ansible-playbook -i hosts site.yml
+
+# Testing
+
+```
+gem install inspec
+```
+
+[![pivorak-dev-test-result0.png](https://github.com/romanvbabenko/pivorak-dev/blob/master/pivorak-dev-test-result0.png)
